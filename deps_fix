@@ -1,3 +1,5 @@
 sudo patchelf --remove-needed libraylib.so.550 kdlplayer 
 sudo patchelf --set-rpath '$ORIGIN/libs' kdlplayer 
 sudo patchelf --add-needed libraylib.so.550 kdlplayer 
+
+#Also you can try compile raylib :)
