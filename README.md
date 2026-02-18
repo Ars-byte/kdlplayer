@@ -1,99 +1,86 @@
-# kdlplayer
+# kdlplayer 🎵
 
-# 🎵 kdlplayer
-**kdlplayer** es un reproductor de música minimalista y eficiente desarrollado en **C++** utilizando la biblioteca **raylib**. Está diseñado específicamente para entornos Linux, ofreciendo integración nativa con el escritorio y soporte para **Discord Rich Presence**.
-
----
-
-## ✨ Características Principaless
-
-* **⚡ Ligero y Rápido:** Construido sobre raylib para un consumo mínimo de recursos.
-* **🎮 Discord Rich Presence:** Muestra automáticamente qué canción estás escuchando y tu progreso en tu perfil de Discord.
-* **📂 Integración con el Sistema:** * Diálogo nativo para seleccionar carpetas (vía `zenity`).
-* Generación automática de archivo `.desktop` e icono para el lanzador de aplicaciones.
-
-
-* **🎹 Controles Intuitivos:** Soporte para teclado, ratón y rueda de desplazamiento.
-* **🎶 Gestión de Playlist:** Soporte para formatos `.mp3`, `.flac` y `.ogg` con modos de reproducción aleatoria (Shuffle) y bucle.
-* **🎨 Interfaz Personalizable:** Soporte para fuentes externas (`font.ttf`) y renderizado con suavizado (MSAA 4X).
+**kdlplayer** is a minimalist and efficient music player developed in C++ using the **raylib** library. Designed specifically for Linux systems, it offers a clean interface, keyboard controls, and automatic desktop integration.
 
 ---
 
-## 🛠️ Requisitos del Sistema
+## ✨ Features
 
-Para compilar y ejecutar este proyecto, necesitarás:
+* **Format Support:** Plays `.mp3` files.
+* **Playlist Management:** Loads entire folders and sorts songs alphabetically.
+* **Playback Modes:** Includes **Shuffle** and **Loop** functionality.
+* **GUI:** Real-time progress visualization and intuitive click-to-seek controls.
+* **Linux Integration:** For all Linux distributions
+* Automatically generates a `.desktop` file to appear in your application launcher.
+* Uses native system dialogues (**Zenity**) for folder selection.
 
-* **Compilador:** GCC/G++ con soporte para C++17.
-* **Bibliotecas:**
-* [raylib](https://www.raylib.com/)
-* [Discord-RPC](https://github.com/discord/discord-rpc)
 
-
-* **Utilidades de Linux:** `zenity` (para el explorador de archivos) y `update-desktop-database`.
+* **Background Audio:** Dedicated audio thread processing to ensure smooth playback.
 
 ---
 
-## 🚀 Instalación y Compilación
+## 🛠️ Prerequisites
 
-1. **Clona el repositorio:**
+To compile and run this project, you will need:
+
+1. **Raylib:** Installed on your system.
+2. **Zenity:** For folder selection dialogs (`sudo apt install zenity`).
+3. **C++ Compiler:** Supporting C++17 or higher.
+4. **Assets:** The program expects `icon/font.ttf` and `icon/icon.png` for the UI.
+
+---
+
+## 🚀 Compilation
+
+You can compile the project using `g++`. Ensure you are in the project's root directory:
+
 ```bash
-git clone https://github.com/tu-usuario/kdlplayer.git
-cd kdlplayer
+g++ mixerplayer.cpp -o kdlplayer -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -std=c++17
 
 ```
 
-
-2. **Asegúrate de tener las dependencias instaladas:**
-```bash
-# Ejemplo en Ubuntu/Debian
-sudo apt install libraylib-dev zenity
-
-```
-
-
-3. **Compilación:**
-Asegúrate de enlazar las librerías correspondientes en tu comando de compilación:
-```bash
-g++ mixerplayer.cpp -o kdlplayer -lraylib -ldiscord-rpc -lpthread -lrt -lm -ldl
-
-```
-
-
-4. **Recursos:**
-Coloca un archivo `font.ttf` y una carpeta `icon/icon.png` en el directorio del ejecutable para que el reproductor los cargue correctamente.
+*Note: The code references `libs/discord_rpc.h`. Ensure you link the provided shared library (`libdiscord-rpc.so`) if you intend to enable Discord Rich Presence.*
 
 ---
 
-## 🎮 Controles
+## 🎮 Controls
 
-| Acción | Control |
+| Action | Control |
 | --- | --- |
-| **Reproducir / Pausa** | `ESPACIO` o `CLIC IZQUIERDO` |
-| **Siguiente Canción** | `FLECHA DERECHA` |
-| **Canción Anterior** | `FLECHA IZQUIERDA` |
-| **Subir / Bajar Volumen** | `FLECHAS ARRIBA/ABAJO` o `RUEDA DEL RATÓN` |
-| **Abrir Carpeta** | `Tecla O` |
-| **Modo Aleatorio (Shuffle)** | `Tecla R` |
-| **Modo Bucle (Loop)** | `Tecla L` |
-| **Buscar en la canción** | `CLIC` sobre la barra de progreso |
+| **Open Folder** | `O` Key |
+| **Pause / Resume** | Left Click on screen |
+| **Next / Previous** | Right (`→`) / Left (`←`) Arrows |
+| **Toggle Shuffle** | `R` Key |
+| **Toggle Loop** | `L` Key |
+| **Adjust Volume** | Mouse Wheel |
+| **Seek Position** | Click on the Progress Bar |
 
 ---
 
-## 📂 Estructura del Código
+## 📂 Project Structure
 
-El código se organiza en varios módulos clave:
+```text
+.
+├── kdlplayer            # Generated executable
+├── mixerplayer.cpp      # Main source code
+├── icon/                # Asset folder
+│   ├── font.ttf         # Custom font
+│   └── icon.png         # Application icon
+└── libs/                # External libraries
+    ├── discord_rpc.h    # Discord RPC header
+    └── libdiscord-rpc.so # Shared library
 
-* **PathManager:** Gestiona la creación de accesos directos en el sistema y rutas de iconos.
-* **DiscordManager:** Maneja la comunicación con la API de Discord.
-* **Reproductor:** Lógica central que gestiona la lista de reproducción, estados y carga de archivos mediante `std::filesystem`.
-* **AudioThread:** Hilo dedicado para el refresco del buffer de audio, garantizando que la música no se corte incluso si la ventana se congela.
+```
 
 ---
 
-## 👤 Autor
+## 📝 Installation Notes
 
-Desarrollado por **Ars Byte** (RomanticHomicide).
+Upon the first execution, the program attempts to create a shortcut at:
+`~/.local/share/applications/kdlplayer.desktop`
+
+This allows you to search for "kdlplayer" directly from your Linux application menu.
 
 ---
 
-**¿Te gustaría que añada una sección de "Solución de problemas" o instrucciones específicas para compilar el Discord RPC?**
+**Developed by:** Ars Byte :b
