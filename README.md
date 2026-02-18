@@ -81,6 +81,11 @@ Upon the first execution, the program attempts to create a shortcut at:
 
 This allows you to search for "kdlplayer" directly from your Linux application menu.
 
+
+## Preview:
+
+<img width="565" height="291" alt="image" src="https://github.com/user-attachments/assets/6f401d23-873c-4687-8d11-41272e958895" />
+
 ---
 
 **Developed by:** Ars Byte :b
