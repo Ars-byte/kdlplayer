@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=kdlplayer
+Exec=kdlplayer
+Icon=kdlplayer
+Categories=AudioVideo;Player;
+Terminal=false
