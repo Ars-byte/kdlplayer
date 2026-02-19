@@ -15,6 +15,19 @@ namespace fs = std::filesystem;
 
 struct Song { std::string path, name; };
 
+// --- DISCORD RPC ---
+void UpdateDiscordPresence(const std::string& songName, bool isPaused) {
+    DiscordRichPresence discordPresence;
+    memset(&discordPresence, 0, sizeof(discordPresence));
+    
+    discordPresence.state = isPaused ? "En pausa" : "Reproduciendo";
+    discordPresence.details = songName.c_str();
+    discordPresence.largeImageKey = "icon"; 
+    discordPresence.largeImageText = "kdlplayer";
+    
+    Discord_UpdatePresence(&discordPresence);
+}
+
 // --- PATH AND DESKTOP MANAGEMENT ---
 struct PathManager {
     static std::string GetHome() {
@@ -23,14 +36,18 @@ struct PathManager {
     }
 
     static void SetupDesktopEntry(const char* exePath) {
-        fs::path pExe(exePath);
+        char absolutePath[1024];
+        if (!realpath(exePath, absolutePath)) return;
+
+        fs::path pExe(absolutePath);
         std::string home = GetHome();
         std::string iconDir = home + "/.local/share/applications/icon";
         std::string iconPath = iconDir + "/icon.png";
+        std::string workDir = pExe.parent_path().string();
         
         try {
             fs::create_directories(iconDir);
-            std::string srcIcon = pExe.parent_path().string() + "/icon/icon.png";
+            std::string srcIcon = workDir + "/icon/icon.png";
             if (fs::exists(srcIcon)) {
                 fs::copy_file(srcIcon, iconPath, fs::copy_options::overwrite_existing);
             }
@@ -38,8 +55,15 @@ struct PathManager {
 
         std::ofstream df(home + "/.local/share/applications/kdlplayer.desktop");
         if (df.is_open()) {
-            df << "[Desktop Entry]\nType=Application\nName=kdlplayer\nExec=" << exePath 
-               << "\nIcon=" << iconPath << "\nTerminal=false\nCategories=AudioVideo;Player;\n";
+            // "env LD_LIBRARY_PATH" es el truco para que cargue la .so de Discord desde la carpeta libs
+            df << "[Desktop Entry]\n"
+               << "Type=Application\n"
+               << "Name=kdlplayer\n"
+               << "Exec=env LD_LIBRARY_PATH=" << workDir << "/libs " << absolutePath << "\n" 
+               << "Path=" << workDir << "\n"
+               << "Icon=" << iconPath << "\n"
+               << "Terminal=false\n"
+               << "Categories=AudioVideo;Player;\n";
             df.close();
         }
     }
@@ -71,6 +95,7 @@ public:
                 SetMusicVolume(currentMusic, volume);
                 isLoaded = true;
                 isPaused = false;
+                UpdateDiscordPresence(playlist[currentIndex].name, false);
             }
         }
     }
@@ -136,15 +161,18 @@ std::string PickFolderDialog() {
     return "";
 }
 
-// --- MAIN ---
 int main(int argc, char* argv[]) {
-    char fullPath[1024];
-    if (realpath(argv[0], fullPath)) PathManager::SetupDesktopEntry(fullPath);
+    // 1. Setup .desktop con rutas absolutas
+    PathManager::SetupDesktopEntry(argv[0]);
+
+    // 2. Discord Init
+    DiscordEventHandlers handlers;
+    memset(&handlers, 0, sizeof(handlers));
+    Discord_Initialize("1468317452969709570", &handlers, 1, NULL);
 
     InitWindow(550, 280, "kdlplayer");
     InitAudioDevice();
 
-    // Loading custom font from icon/font.ttf
     Font font = LoadFontEx("icon/font.ttf", 32, 0, 0); 
     if (font.texture.id == 0) font = GetFontDefault();
     SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
@@ -156,7 +184,8 @@ int main(int argc, char* argv[]) {
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
-        // --- INPUT LOGIC ---
+        Discord_RunCallbacks();
+
         if (IsKeyPressed(KEY_O)) {
             std::string folder = PickFolderDialog();
             if (!folder.empty()) player.loadPlaylist(folder);
@@ -172,6 +201,10 @@ int main(int argc, char* argv[]) {
                 player.isPaused = !player.isPaused;
                 if (player.isPaused) PauseMusicStream(player.currentMusic); 
                 else ResumeMusicStream(player.currentMusic);
+                
+                if (player.isLoaded) {
+                    UpdateDiscordPresence(player.playlist[player.currentIndex].name, player.isPaused);
+                }
             }
         }
 
@@ -189,20 +222,14 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // --- DRAWING ---
         BeginDrawing();
             ClearBackground({22, 22, 22, 255});
-            
-            // Header
             DrawRectangle(0, 0, 550, 60, {32, 32, 32, 255});
             DrawTextEx(font, "kdlplayer", {20, 15}, 32, 1, SKYBLUE);
             DrawTextEx(font, "By Ars Byte :b", {430, 25}, 14, 1, DARKGRAY);
 
             if (player.isLoaded) {
-                // Large song title
                 DrawTextEx(font, player.playlist[player.currentIndex].name.c_str(), {25, 90}, 28, 1, RAYWHITE);
-                
-                // Progress Bar
                 float prog = GetMusicTimePlayed(player.currentMusic) / GetMusicTimeLength(player.currentMusic);
                 DrawRectangle(25, 175, 500, 6, {50, 50, 50, 255});
                 DrawRectangle(25, 175, (int)(500 * prog), 6, SKYBLUE);
@@ -211,23 +238,20 @@ int main(int argc, char* argv[]) {
                 DrawTextEx(font, "No music loaded. Press 'O' to open folder.", {25, 90}, 20, 1, GRAY);
             }
             
-            // Footer UI with Arrow controls explanation
             DrawTextEx(font, "SHUFFLE", {380, 230}, 16, 1, player.isShuffle ? SKYBLUE : GRAY);
             DrawTextEx(font, "LOOP", {480, 230}, 16, 1, player.isLoop ? SKYBLUE : GRAY);
-            
-            // Helpful control labels
             DrawTextEx(font, "O: OPEN | ARROWS: PREV/NEXT | R: SHUFFLE | L: LOOP", {25, 255}, 13, 1, GRAY);
             DrawTextEx(font, "CLICK: PAUSE/RESUME | WHEEL: VOLUME", {25, 235}, 13, 1, GRAY);
-            
         EndDrawing();
     }
 
-    // --- CLEANUP ---
     player.quit = true;
     if (audioUpdater.joinable()) audioUpdater.join();
     if (player.isLoaded) UnloadMusicStream(player.currentMusic);
     UnloadFont(font);
     CloseAudioDevice();
     CloseWindow();
+    Discord_Shutdown();
+    
     return 0;
 }

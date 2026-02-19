@@ -35,7 +35,7 @@ To compile and run this project, you will need:
 You can compile the project using `g++`. Ensure you are in the project's root directory:
 
 ```bash
-g++ mixerplayer.cpp -o kdlplayer -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -std=c++17
+g++ mixerplayer.cpp -o kdlplayer -L./libs -ldiscord-rpc -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -std=c++17
 
 ```
 

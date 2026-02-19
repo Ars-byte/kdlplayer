@@ -14,4 +14,5 @@ cat kdlplayer.desktop
     --desktop-file kdlplayer.desktop \
     --icon-file icon/kdlplayer.png \
     --library libs/libraylib.so.550 \
+    --library libs/libdiscord-rpc.so \
     --output appimage
